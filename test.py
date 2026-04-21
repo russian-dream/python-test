@@ -23,10 +23,7 @@ def search_products():
     # Параметризованный запрос вместо f-строки
     with sqlite3.connect(app.config['DB_PATH']) as conn:
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, name, price FROM products WHERE name LIKE ?",
-            (f'%{search_term}%',)
-        )
+        cursor.execute("SELECT id, name, price FROM products WHERE name LIKE ?", (f'%{search_term}%',))
         results = cursor.fetchall()
 
     return jsonify(results)
