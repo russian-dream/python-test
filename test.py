@@ -20,14 +20,17 @@ def search_products():
     if not search_term or len(search_term) > 100:
         abort(400, "Invalid search term")
 
-    # Параметризованный запрос вместо f-строки
+    like_pattern = '%{}%'.format(search_term)  # или '%' + search_term + '%'
+
     with sqlite3.connect(app.config['DB_PATH']) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT id, name, price FROM products WHERE name LIKE ?", (f'%{search_term}%',))
+        cursor.execute(
+            "SELECT id, name, price FROM products WHERE name LIKE :pattern",
+            {"pattern": like_pattern}
+        )
         results = cursor.fetchall()
 
     return jsonify(results)
-
 
 def _item_cost(item):
     price = item.get('price')
