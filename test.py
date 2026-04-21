@@ -6,10 +6,11 @@ import logging
 app = Flask(__name__)
 app.config['DB_PATH'] = os.environ.get('DB_PATH', 'products.db')
 
+# SQL-запросы — константы модуля, не зависят от пользовательского ввода
+SEARCH_PRODUCTS_SQL = "SELECT id, name, price FROM products WHERE name LIKE :pattern"
+
 PRICE_DISCOUNT_THRESHOLD = 100
 DISCOUNT_RATE = 0.1
-TAX_RATE = 0.2
-SHIPPING = 5
 
 logger = logging.getLogger(__name__)
 
@@ -20,17 +21,15 @@ def search_products():
     if not search_term or len(search_term) > 100:
         abort(400, "Invalid search term")
 
-    like_pattern = '%{}%'.format(search_term)  # или '%' + search_term + '%'
+    like_pattern = '%' + search_term + '%'
 
     with sqlite3.connect(app.config['DB_PATH']) as conn:
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, name, price FROM products WHERE name LIKE :pattern",
-            {"pattern": like_pattern}
-        )
+        cursor.execute(SEARCH_PRODUCTS_SQL, {"pattern": like_pattern})
         results = cursor.fetchall()
 
     return jsonify(results)
+
 
 def _item_cost(item):
     price = item.get('price')
@@ -45,8 +44,6 @@ def _item_cost(item):
 def calculate_price(items):
     return sum(_item_cost(i) for i in items)
 
-
-# Эндпоинт /config удалён — не возвращаем секреты наружу
 
 if __name__ == '__main__':
     app.run(debug=os.environ.get('FLASK_DEBUG') == '1')
